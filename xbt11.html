@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>XBT</title>
+  <script src="https://unpkg.com/react@16/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/babel-standalone@6.15.0/babel.min.js"></script>
+  <style type="text/css">
+    @font-face{
+      font-family: Hermes;
+      src: url(assets/hermes_font.ttf);
+    }
+    h3{
+      color: #ffffff;
+      font-weight: normal;
+      margin: 0 auto;
+    }
+    body{
+      background: #131722;
+    }
+    #root{
+      width: 333px;
+      text-align: center
+    }
+    .root{
+      width: 333px;
+      text-align: center
+    }
+    #root table{
+      margin: 0 auto;
+      margin-top: -15px;
+    }
+    .border{
+      border: 0px solid rgba(0,0,0,0);
+      width: 333px;
+      text-align: center;
+      padding-bottom: 10px;
+      height: 442px;
+    }
+  </style>
+  
+</head>
+<body>
+  <div class="border">
+    <div id="root"></div>
+  </div>
+  <link href='https://fonts.googleapis.com/css?family=Roboto Mono' rel='stylesheet'>
+  <style>
+    input.symbolInput, input.priceInput,button#thebutton , .hide{
+      display: none !important; 
+    }
+    .streamingTable
+    {
+      background-color: #131722;
+      border-collapse: collapse;
+      border-spacing: 0;
+      font-family: Roboto Mono;
+      font-size: 16px;
+    }
+    .streamingTable .streamingListRow td
+    {
+      padding: 5px;
+      white-space: nowrap;
+      border-left: 0px solid #ddd;
+      text-align: right;
+    }
+    .streamingListRow
+    {
+      border-top: 0px solid #bbb;
+    }
+    
+    .streamingTable .Buy 
+    {
+      color: #3DFDC1;
+    }
+    .streamingTable tr.Dark.Buy
+    {
+      color: black;
+      background-color: #3DFDC1;
+    }
+    .streamingTable .Sell
+    {
+      color: #FD29FC;
+    }
+    .streamingTable tr.Dark.Sell
+    {
+      color: white;
+      background-color: #FD29FC;
+    }
+    
+    .streamingListRow:nth-child(1) {
+      color: black;
+      background: #D8B0AB;
+    }
+    .streamingListRow:nth-child(3) {
+      background: rgb(64, 64, 64);
+    }
+    .streamingListRow:nth-child(5) {
+      background: rgb(64, 64, 64);
+    }
+    .streamingListRow:nth-child(7) {
+      background: rgb(64, 64, 64);
+    }
+    .streamingListRow:nth-child(9) {
+      background: rgb(64, 64, 64);
+    }
+    .streamingListRow:nth-child(11) {
+      background: rgb(64, 64, 64);
+    }
+    .streamingListRow:nth-child(13) {
+      background: rgb(64, 64, 64);
+    }
+    .streamingListRow:nth-child(15) {
+      background: rgb(64, 64, 64);
+    }
+    
+    
+    .streamingListRow:nth-child(even) {
+      background: #131722;
+    }
+    tr:nth-child(n + 15) {
+      display: none;
+    }
+    table thead th{
+      font-family: Roboto Mono;
+      text-align: right;
+      background: #131722;
+      color: #D8B0AB;
+      font-size: 21px;
+      font-weight: normal;
+    }
+  </style>
+  
+  
+  <script type="text/babel">
+    
+    function formatAMPM(date) {
+      var hours = date.getHours();
+      var minutes = date.getMinutes();
+      var seconds = date.getSeconds();
+      var ampm = hours >= 12 ? 'pm' : 'am';
+      hours = hours % 12;
+      hours = hours ? hours : 12; // the hour '0' should be '12'
+      minutes = minutes < 10 ? '0'+minutes : minutes;
+      seconds = seconds < 10 ? '0'+seconds : seconds;
+      var strTime = '| ' + hours + ':' + minutes + ':' + seconds + ' ' + ampm;
+      return strTime;
+    }
+    
+    function average(arr, priceFilter) {
+      var sumSizeArr = {}, sumPriceArr= {}, results = [], timestamp, side;
+      for (var i = 0; i < arr.length; i++) {
+        var item = arr[i];
+        var key = item.timestamp + item.side;
+        if (!(key in sumSizeArr)) {
+          sumSizeArr[key] = {};
+          sumSizeArr[key].sizeSum = item.size;
+        } else {
+          sumSizeArr[key].sizeSum += arr[i].size;
+        }
+      }
+      
+      for (var i = 0; i < arr.length; i++) {
+        var item = arr[i];
+        var key = item.timestamp + item.side;
+        var sizeItem = sumSizeArr[key];
+        if (!(key in sumPriceArr)) {
+          sumPriceArr[key] = {};
+          sumPriceArr[key].symbol = item.symbol;
+          sumPriceArr[key].priceSum = item.price * item.size / sizeItem.sizeSum;
+          sumPriceArr[key].sizeSum = item.size;
+          sumPriceArr[key].timestamp = formatAMPM(new Date(item.timestamp));
+          sumPriceArr[key].side = item.side;
+        } else {
+          sumPriceArr[key].priceSum += item.price * item.size / sizeItem.sizeSum;
+          sumPriceArr[key].sizeSum += item.size;
+        }
+      }
+      
+      for(key in sumPriceArr) {
+        var item = sumPriceArr[key];
+        if (item.sizeSum >= priceFilter)
+        {
+          var xhr = new XMLHttpRequest();
+          var url = "https://script.google.com/macros/s/AKfycbyY7p6LEkWI__x9pZ6uRDyL9bQru2Q3EtDly9tCPql5z68_MUo/exec?action=xbt11&bitcoin="+item.priceSum.toFixed(2)+"&size="+item.sizeSum+"&TIMESTAMP="+item.timestamp+"&side="+item.side+"";
+          xhr.open("POST", url, true);
+          xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+          xhr.send();
+          results.push({ 
+            symbol: item.symbol,
+            price:item.priceSum.toFixed(2),
+            size: item.sizeSum,
+            timestamp: item.timestamp,
+            side: item.side
+          });
+        }
+      }
+      return results;
+    }
+    
+    class TableRow extends React.Component {
+      render() {
+        const {data} = this.props;
+        const row = data.map((data, i) =>
+        <tr className={"streamingListRow " + (data.size > 99999 ? 'Dark ' : '') + (data.side == "Sell" ? 'Sell' : 'Buy')} key={i}>
+          <td width="90">{data.price}</td>
+          <td width="80">{data.size > 999 ? '>   $' + (data.size/1000).toFixed(0) + ',000' : '>   $' + data.size}</td>
+          <td width="100">{data.timestamp}</td>
+        </tr>
+        );
+        return (
+        <tbody>{row}</tbody>
+        );
+      }
+    }
+    
+    class Table extends React.Component {
+      constructor(props) {
+        super(props);
+      }
+      render() {
+        return (
+        <table className="streamingTable">
+          <thead>
+            <tr>
+              <th>BITCOIN</th>
+              <th>SIZE</th>
+              <th>TIMESTAMP</th>
+            </tr>
+          </thead>
+          <TableRow data={this.props.data} />
+        </table>
+        );
+      }
+    }
+    
+    class ShowData extends React.Component {
+      constructor(props) {
+        super(props);
+        this.state = {data: []};
+        this.instance = this;
+      }
+      
+      initWebSocketClient(symbol, price) {
+        if (symbol == null)
+        {
+          return null
+        }
+        var context = this.instance
+        var streamingData = null;
+        var priceFilter = isNaN(price) ? 0 : price;
+        if (context.socket != null)
+        {
+          context.socket.close();
+          context.socket = null;
+        }
+        context.socket = new WebSocket("wss://www.bitmex.com/realtime?subscribe=trade:" + symbol.toUpperCase());
+        context.socket.onmessage = function(event) {
+          let obj = JSON.parse(event.data);
+          if (obj.data == null)
+          {
+            return;
+          }
+          let data = average(obj.data, priceFilter);
+          if (streamingData == null)
+          {
+            streamingData =data;
+          }
+          else
+          {
+            if (streamingData.length > 100)
+            {
+              streamingData.splice(streamingData.length - 20);
+            }
+            streamingData = data.concat(streamingData);
+          }
+          
+          context.setStreamData({data: streamingData});
+        };
+      }
+      
+      setStreamData(data){
+        this.setState(data);
+      }
+      
+      render() {
+        return (
+        <div>
+          <Table data={this.state.data}/>
+        </div>);
+      }
+    }
+    
+    class SetSymbolView extends React.Component {
+      constructor() {
+        super();
+        this.onSymbol = this.onSymbol.bind(this);
+        this.onKeyPress = this.onKeyPress.bind(this);
+      }
+      
+      onKeyPress(e) {
+        if (e.key === 'Enter') {
+          this.onSymbol();
+        }
+      }
+      
+      onSymbol() {
+        this.dataComponent.initWebSocketClient("XBT", parseInt(1));
+      }
+      
+      
+      render() {
+        return (
+        <div>
+          <input 
+          ref="symbol"
+          type="text" 
+          value="XBT"
+          class="hide"
+          name="symbolBox"
+          className="symbolInput"
+          placeholder="Enter symbol here..."
+          onKeyPress={this.onKeyPress}
+          />
+          <p id='Label1' class="hide"> Time </p>
+          <input 
+          ref="minPrice"
+          type="number" 
+          value="1000"
+          class="hide"
+          name="minPriceBox"
+          className="priceInput"
+          placeholder="Min order size threshold..."
+          min="0"
+          onKeyPress={this.onKeyPress}
+          />
+          <button id="thebutton" onClick={this.onSymbol}>Submit</button>
+          <p/>
+          <div>
+            <ShowData ref={instance => { this.dataComponent = instance; }}/>
+            </div>
+          </div>
+          );
+        }
+      }
+      
+      ReactDOM.render(<SetSymbolView />, document.getElementById('root'));
+    </script>
+    <script type="text/javascript">
+      time = 6;
+      interval = setInterval(function() {
+        time--;
+        document.getElementById('Label1').innerHTML = "" + time + " seconds"
+        if (time == 0) {
+          // stop timer
+          clearInterval(interval);
+          // click
+          document.getElementById('thebutton').click();            
+        }
+      }, 1000)
+    </script>
+  </body>
+  </html>
+  
